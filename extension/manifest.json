@@ -1,0 +1,14 @@
+{
+  "manifest_version": 2,
+  "name": "OpenAI Browser Extension",
+  "version": "1.0",
+  "description": "A simple browser extension to interact with OpenAI API",
+  "permissions": ["activeTab", "https://api.openai.com/"],
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "icons": {
+    "48": "icon.png"
+  }
+}

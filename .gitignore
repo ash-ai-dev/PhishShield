@@ -1,0 +1,4 @@
+backend/venv/
+kaggle.env
+privacyOpen.env
+backend/data/

@@ -11,6 +11,8 @@ from extraction import extract_features
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score, f1_score, classification_report
 
 # Define paths
@@ -96,21 +98,45 @@ try:
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
 
-    # Step 7: Train Logistic Regression Model
-    model = LogisticRegression()
-    model.fit(X_train, y_train)
+    # Step 7: Train and evaluate Logistic Regression
+    print("=== Logistic Regression ===")
+    lr_model = LogisticRegression()
+    lr_model.fit(X_train, y_train)
+    lr_pred = lr_model.predict(X_test)
 
-    # Step 8: Make predictions
-    y_pred = model.predict(X_test)
+    lr_accuracy = accuracy_score(y_test, lr_pred)
+    lr_f1 = f1_score(y_test, lr_pred)
 
-    # Step 9: Evaluate model performance
-    accuracy = accuracy_score(y_test, y_pred)
-    f1 = f1_score(y_test, y_pred)
+    print(f"Model Accuracy: {lr_accuracy:.2f}")
+    print(f"F1 Score: {lr_f1:.2f}")
+    print("\nClassification Report:\n", classification_report(y_test, lr_pred))
 
-    print(f"Model Accuracy: {accuracy:.2f}")
-    print(f"F1 Score: {f1:.2f}")
-    print("\nClassification Report:\n", classification_report(y_test, y_pred))
+    # Step 8: Train and evaluate Random Forest
+    print("\n=== Random Forest Classifier ===")
+    rf_model = RandomForestClassifier(random_state=42)
+    rf_model.fit(X_train, y_train)
+    rf_pred = rf_model.predict(X_test)
 
+    rf_accuracy = accuracy_score(y_test, rf_pred)
+    rf_f1 = f1_score(y_test, rf_pred)
+
+    print(f"Model Accuracy: {rf_accuracy:.2f}")
+    print(f"F1 Score: {rf_f1:.2f}")
+    print("\nClassification Report:\n", classification_report(y_test, rf_pred))
+
+    # Step 9: Train and evaluate Naive Bayes
+    print("\n=== Naive Bayes ===")
+    nb_model = GaussianNB()
+    nb_model.fit(X_train, y_train)
+    nb_pred = nb_model.predict(X_test)
+
+    nb_accuracy = accuracy_score(y_test, nb_pred)
+    nb_f1 = f1_score(y_test, nb_pred)
+
+    print(f"Model Accuracy: {nb_accuracy:.2f}")
+    print(f"F1 Score: {nb_f1:.2f}")
+    print("\nClassification Report:\n", classification_report(y_test, nb_pred))
+    
 except FileNotFoundError:
     print(f"Error: features CSV file not found at {features_csv_path}. Please make sure feature extraction ran correctly.")
     exit(1)

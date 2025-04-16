@@ -1,5 +1,6 @@
 import os
 import re
+import joblib
 import pandas as pd
 import numpy as np
 from urllib.parse import urlparse
@@ -15,6 +16,14 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score, f1_score, classification_report
 
+def show_label_distribution(labels):
+    print("\n=== Label Distribution ===")
+    label_counts = labels.value_counts()
+    for label, count in label_counts.items():
+        label_name = "Phishing" if label == 1 else "Ham"
+        print(f"{label_name} ({label}): {count}")
+
+
 # Define paths
 script_dir = os.path.dirname(os.path.abspath(__file__))
 data_dir = os.path.join(script_dir, "data")
@@ -25,17 +34,17 @@ ham_emails_csv_path = os.path.join(data_dir, "ham_emails.csv")
 cleaned_csv_path = os.path.join(data_dir, "phishing_emails_cleaned.csv")
 features_csv_path = os.path.join(data_dir, "phishing_emails_with_features.csv")
 
-# Step 1: Check if phishing3.csv or ham_emails.csv exist
+# Check if phishing3.csv or ham_emails.csv exist
 if not os.path.exists(ham_emails_csv_path):
     print("Ham dataset not found. Running ham email loader...")
-    dataset_name = "mandygu/lingspam-dataset"  # Update as needed
+    dataset_name = "mandygu/lingspam-dataset" 
     process_and_save_dataset(dataset_name)
 
 if not os.path.exists(phishing_csv_path):
     print("Phishing dataset not found. Running mbox processor...")
     process_mbox(mbox_path, data_dir) 
 
-# Step 2: Check if cleaned CSV exists, if not, preprocess
+# Check if cleaned CSV exists, if not, preprocess
 if not os.path.exists(cleaned_csv_path):
     print("phishing_emails_cleaned.csv not found. Running preprocessing...")
     cleaned_path = preprocess_phishing_dataset(data_dir)  # Pass the correct dataset
@@ -44,7 +53,7 @@ if not os.path.exists(cleaned_csv_path):
         print("Preprocessing failed. Exiting.")
         exit(1)
 
-# Step 3: Load cleaned CSV and extract features
+# Load cleaned CSV and extract features
 if os.path.exists(cleaned_csv_path):
     try:
         df = pd.read_csv(cleaned_csv_path)
@@ -52,10 +61,10 @@ if os.path.exists(cleaned_csv_path):
 
         df = df.dropna(subset=["body"])  # Drop rows with missing body
 
-        # Ensure "body" is a string to avoid AttributeError
+        # Make "body" is a string to avoid AttributeError
         df["body"] = df["body"].astype(str).fillna("")
 
-        # Step 4: Extract features from the dataset
+        # Extract features from the dataset
         feature_df = df.apply(lambda row: extract_features(row), axis=1).apply(pd.Series)
 
         # Merge features with original dataset
@@ -71,7 +80,7 @@ if os.path.exists(cleaned_csv_path):
         print(f"Error: CSV file not found at {cleaned_csv_path}")
         exit(1)
 
-# Step 5: Load the features CSV and prepare for training
+# Load the features CSV and prepare for training
 try:
     df = pd.read_csv(features_csv_path)
 
@@ -87,18 +96,19 @@ try:
     print("Feature columns used for training:")
     print(X.columns)
     y = df['label'].astype(int)
+    show_label_distribution(y)
 
     # Split into training and testing sets (80% train, 20% test)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Step 6: Scale features (important for Logistic Regression)
+    # Scale features (important for Logistic Regression)
     scaler = StandardScaler()
     X_train = X_train.apply(pd.to_numeric, errors='coerce')
     X_train.fillna(0, inplace=True)
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
 
-    # Step 7: Train and evaluate Logistic Regression
+    # Train and evaluate Logistic Regression
     print("=== Logistic Regression ===")
     lr_model = LogisticRegression()
     lr_model.fit(X_train, y_train)
@@ -111,7 +121,7 @@ try:
     print(f"F1 Score: {lr_f1:.2f}")
     print("\nClassification Report:\n", classification_report(y_test, lr_pred))
 
-    # Step 8: Train and evaluate Random Forest
+    # Train and evaluate Random Forest
     print("\n=== Random Forest Classifier ===")
     rf_model = RandomForestClassifier(random_state=42)
     rf_model.fit(X_train, y_train)
@@ -124,7 +134,7 @@ try:
     print(f"F1 Score: {rf_f1:.2f}")
     print("\nClassification Report:\n", classification_report(y_test, rf_pred))
 
-    # Step 9: Train and evaluate Naive Bayes
+    # Train and evaluate Naive Bayes
     print("\n=== Naive Bayes ===")
     nb_model = GaussianNB()
     nb_model.fit(X_train, y_train)
@@ -140,3 +150,11 @@ try:
 except FileNotFoundError:
     print(f"Error: features CSV file not found at {features_csv_path}. Please make sure feature extraction ran correctly.")
     exit(1)
+
+# Save the logistic regression model
+joblib.dump(lr_model, os.path.join(data_dir, "lr_model.pkl"))
+
+# Save the scaler
+joblib.dump(scaler, os.path.join(data_dir, "scaler.pkl"))
+
+print("Model and scaler saved successfully!")

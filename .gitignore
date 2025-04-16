@@ -1,5 +1,5 @@
 backend/venv/
 backend/__pycache__
 kaggle.env
-privacyOpen.env
+backend/openAI.env
 backend/data/

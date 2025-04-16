@@ -6,11 +6,16 @@
   </head>
   <body>
     <h1>PhishShield!</h1>
-    <!-- Button to fetch data from FastAPI -->
-    <button id="fetchData">Fetch Data</button>
 
-    <!-- Div to display the OpenAI response -->
+    <button id="fetchData">Analyze Latest Gmail</button>
+
     <div id="response">Waiting for action...</div>
+
+    <div id="response"></div>
+
+    <h2>Prediction: <span id="prediction"></span></h2>
+    <p><strong>Explanation:</strong></p>
+    <p id="explanation"></p>
 
     <script src="popup.js"></script>
   </body>

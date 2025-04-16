@@ -1,14 +1,35 @@
 {
-  "manifest_version": 2,
-  "name": "OpenAI Browser Extension",
-  "version": "1.0",
-  "description": "A simple browser extension to interact with OpenAI API",
-  "permissions": ["activeTab", "https://api.openai.com/"],
-  "browser_action": {
+  "manifest_version": 3,
+  "name": "OpenAI Gmail Assistant",
+  "version": "1.1",
+  "description": "A browser extension to interact with OpenAI API and access Gmail",
+
+  "permissions": ["identity", "scripting", "storage"],
+
+  "host_permissions": [
+    "https://api.openai.com/",
+    "https://www.googleapis.com/"
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "action": {
     "default_popup": "popup.html",
     "default_icon": "icon.png"
   },
+
   "icons": {
     "48": "icon.png"
+  },
+
+  "oauth2": {
+    "client_id": "176895633920-10djftl9c9pc78rq3svcmttvmka9rlfj.apps.googleusercontent.com",
+    "scopes": ["https://www.googleapis.com/auth/gmail.readonly"]
+  },
+
+  "externally_connectable": {
+    "matches": ["https://*.google.com/*"]
   }
 }

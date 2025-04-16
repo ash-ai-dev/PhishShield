@@ -5,12 +5,10 @@ from bs4 import BeautifulSoup
 import os
 
 def extract_urls(text):
-    """Extracts all URLs from a block of text."""
     url_regex = r'https?://[^\s"<>]+'
     return re.findall(url_regex, text or "")
 
 def extract_body(msg):
-    """Extracts the email body from plain text or HTML parts."""
     if msg.is_multipart():
         parts = []
         for part in msg.walk():
@@ -29,19 +27,16 @@ def extract_body(msg):
             return ""
 
 def clean_html(text):
-    """Strips HTML tags and extracts visible text."""
     soup = BeautifulSoup(text or "", "html.parser")
     return soup.get_text(separator="\n")
 
 def has_attachments(msg):
-    """Checks if the email contains any attachments."""
     for part in msg.walk():
         if part.get_content_disposition() == 'attachment':
             return True
     return False
 
 def process_mbox(mbox_path, data_dir):
-    """Parses the MBOX and writes structured CSV with extracted features."""
     # Ensure the data directory exists
     os.makedirs(data_dir, exist_ok=True)
 
@@ -80,17 +75,24 @@ def process_mbox(mbox_path, data_dir):
         rows.append(row)
 
     df = pd.DataFrame(rows)
-    df.to_csv(csv_output_path, index=False)
-    print(f"✅ Saved {len(df)} emails to {csv_output_path}")
 
-# Example usage:
+    # Double-check the label distribution after processing
+    label_counts_after = df['label'].value_counts()
+    print("Label distribution after processing:")
+    for label, count in label_counts_after.items():
+        label_name = "Phishing" if label == 1 else "Ham"
+        print(f"{label_name} ({label}): {count}")
+
+    df.to_csv(csv_output_path, index=False)
+    print(f"Saved {len(df)} emails to {csv_output_path}")
+
 if __name__ == "__main__":
-    # Define the data directory to save the CSV and read the MBOX
+    # Define the data directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
     data_dir = os.path.join(script_dir, "data")
 
-    # Path to the MBOX file inside the data directory
+    # Path to the MBOX file
     mbox_path = os.path.join(data_dir, "phishing3.mbox")
 
-    # Process the MBOX file and save the CSV to the data directory
+    # Process the MBOX file and save the CSV
     process_mbox(mbox_path, data_dir)

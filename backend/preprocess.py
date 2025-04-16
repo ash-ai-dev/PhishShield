@@ -3,22 +3,12 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 def preprocess_phishing_dataset(dataset_path, output_filename="phishing_emails_cleaned.csv"):
-    """
-    Preprocesses the phishing email dataset.
-
-    Args:
-        dataset_path (str): Path to the directory containing the original CSV files.
-        output_filename (str, optional): Name of the output CSV file. Defaults to "phishing_emails_cleaned.csv".
-
-    Returns:
-        str: Path to the preprocessed dataset CSV file, or None if an error occurred.
-    """
     try:
-        # Step 1: Ensure the dataset directory exists
+        # Ensure the dataset directory exists
         if not os.path.isdir(dataset_path):
             raise FileNotFoundError(f"The directory '{dataset_path}' does not exist!")
 
-        # Step 2: Load all CSV files in the folder
+        # Load all CSV files in the folder
         csv_files = [f for f in os.listdir(dataset_path) if f.endswith(".csv")]
 
         if not csv_files:
@@ -26,7 +16,7 @@ def preprocess_phishing_dataset(dataset_path, output_filename="phishing_emails_c
 
         print(f"Found {len(csv_files)} CSV files. Merging them now...")
 
-        # Step 3: Read and merge datasets
+        # Read and merge datasets
         dfs = []
         for file in csv_files:
             file_path = os.path.join(dataset_path, file)
@@ -38,7 +28,7 @@ def preprocess_phishing_dataset(dataset_path, output_filename="phishing_emails_c
         merged_df = pd.concat(dfs, ignore_index=True)
         print("Datasets merged successfully!")
 
-        # Step 4: Output dataset size and label counts
+        # Output dataset size and label counts
         num_examples = len(merged_df)
         print(f"\nTotal number of examples: {num_examples}")
 
@@ -48,27 +38,26 @@ def preprocess_phishing_dataset(dataset_path, output_filename="phishing_emails_c
         else:
             print("Warning: 'label' column not found. Cannot display label distribution.")
 
-        # Step 5: Check for missing values
+        # Check for missing values
         print("\nChecking for missing values...")
         missing_values = merged_df.isnull().sum()
         print(missing_values[missing_values > 0])  # Show only columns with missing data
 
-        # Step 6: Fill missing values with NaN (or a placeholder like "unknown" or empty string "")
-        # Handling missing values by column type
+        # Fill missing values with NaN (or a placeholder like "unknown" or empty string "")
         for column in merged_df.columns:
-            if merged_df[column].dtype == 'object':  # If column is text
+            if merged_df[column].dtype == 'object': 
                 merged_df[column].fillna("unknown", inplace=True)
-            else:  # If column is numeric
+            else:  
                 merged_df[column].fillna(merged_df[column].mean(), inplace=True)
 
-        # Step 7: Drop duplicate rows (if any)
+        # Drop duplicate rows (if any)
         print("\nRemoving duplicate rows...")
         merged_df.drop_duplicates(inplace=True)
 
-        # Step 8: Standardize column names (optional)
+        # Standardize column names (optional)
         merged_df.columns = merged_df.columns.str.lower().str.replace(" ", "_")
 
-        # Step 9: Basic text preprocessing (cleaning emails)
+        # Basic text preprocessing (cleaning emails)
         print("\nCleaning email content...")
         
         def remove_html_tags(text):
@@ -79,13 +68,13 @@ def preprocess_phishing_dataset(dataset_path, output_filename="phishing_emails_c
             merged_df["body"] = merged_df["body"].astype(str)  # Ensure column is string
             merged_df["body"] = merged_df["body"].apply(remove_html_tags)  # Remove HTML tags
             merged_df["body"] = merged_df["body"].str.replace(r"\s+", " ", regex=True)  # Remove excessive whitespace
-            merged_df["body"] = merged_df["body"].str.replace(r"[^A-Za-z0-9\s]", "", regex=True)  # Remove non-alphanumeric characters
+            merged_df["body"] = merged_df["body"].str.replace(r"[^A-Za-z0-9\s]", "", regex=True)  # Remove alphabet/number characters
             merged_df["body"] = merged_df["body"].str.lower()  # Convert to lowercase
             merged_df["body"] = merged_df["body"].str.strip()  # Remove leading/trailing spaces
         else:
             print("Warning: 'body' column not found. Skipping text cleaning.")
 
-        # Step 10: Check if output file already exists
+        # Check if output file already exists
         cleaned_csv_path = os.path.join(dataset_path, output_filename)
         
         if os.path.exists(cleaned_csv_path):
@@ -101,7 +90,7 @@ def preprocess_phishing_dataset(dataset_path, output_filename="phishing_emails_c
                 print("No new data to add.")
                 return cleaned_csv_path  # No new data added, return the existing file path
             
-        # Step 11: Save preprocessed dataset
+        # Save preprocessed dataset
         merged_df.to_csv(cleaned_csv_path, index=False)
         print(f"\nPreprocessed dataset saved at: {cleaned_csv_path}")
 
@@ -120,7 +109,6 @@ def preprocess_phishing_dataset(dataset_path, output_filename="phishing_emails_c
         print(f"An unexpected error occurred: {e}")
         return None
 
-# Example of how to call the function
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
     data_dir = os.path.join(script_dir, "data")

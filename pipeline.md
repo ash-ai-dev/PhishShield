@@ -1,7 +1,6 @@
 Alright this document will serve as a current "state of the project". At the top, I will also list the current features that need to be implemented or improved.
 
 ## Current Tasks
-- The extension needs to be visually updated significantly
 - We need to update the Gmail fetching such that it will get more emails than just the last one. This in itself is not complicated, but requires specific design to handle what the program will do if many phishing emails are detected (flag those sender addresses?, save the examples somewhere?, give a button to send all to the trash?)
 - There should be some interface to handle when the PhishShield marks something as phishing, but the user does trust that sender. We should carefully mark this sender as potentially unsafe regardless
 - The application should work in real time if the Gmail page is available

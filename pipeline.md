@@ -17,7 +17,7 @@ The current pipeline flow is:
 - The extension uses JS to fetch data from the user's Gmail using the Gmail API
 - The Gmail data that was fetched will send the data to our FastAPI endpoint /email
 - Then, within this endpoint, the /explain endpoint is called. The email data is sent to this endpoint, where our ML model is run.
-- The ML Model will give a prediction, and if the reulting classification is phishing, it'll aask the OpenAI API to generate some content.
+- The ML Model will give a prediction, and if the reulting classification is phishing, it'll aask the OpenAI API to generate some content about why this email was classified as phishing.
 - This content is then POSTed back to the JS file and send the generated explanation back to the extension
 
 ## Browser Extension

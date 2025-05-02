@@ -12,7 +12,7 @@ document.getElementById("fetchData").addEventListener("click", () => {
       return;
     }
 
-    console.log("✅ OAuth token:", token);
+    console.log("OAuth token:", token);
     responseDiv.textContent = "Fetching latest Gmail message...";
 
     // Step 1: Fetch most recent message ID
@@ -25,7 +25,7 @@ document.getElementById("fetchData").addEventListener("click", () => {
       .then((data) => {
         const messageId = data?.messages?.[0]?.id;
         if (!messageId) {
-          responseDiv.textContent = "⚠️ No recent emails found.";
+          responseDiv.textContent = "No recent emails found.";
           return Promise.reject("No message ID retrieved.");
         }
 
@@ -39,7 +39,7 @@ document.getElementById("fetchData").addEventListener("click", () => {
       .then((res) => res.json())
       .then((message) => {
         if (!message || !message.payload) {
-          responseDiv.textContent = "⚠️ Unable to retrieve email content.";
+          responseDiv.textContent = "Unable to retrieve email content.";
           return;
         }
 
@@ -49,8 +49,8 @@ document.getElementById("fetchData").addEventListener("click", () => {
         const emailBody = message.snippet || "";
         const receivedTime = new Date(parseInt(message.internalDate)).toISOString();
 
-        responseDiv.textContent = `📨 Analyzing: "${subject}"...`;
-        console.log("📬 Full Gmail message:", message);
+        responseDiv.textContent = `Analyzing: "${subject}"...`;
+        console.log("Full Gmail message:", message);
 
         // Step 3: Send email data to FastAPI
         return fetch("http://127.0.0.1:8000/email", {
@@ -68,14 +68,14 @@ document.getElementById("fetchData").addEventListener("click", () => {
       })
       .then((res) => res.json())
       .then((data) => {
-        console.log("✅ FastAPI response:", data);
+        console.log("FastAPI response:", data);
 
         predictionDiv.textContent = `Prediction: ${data.prediction}`;
         explanationDiv.textContent = `Explanation: ${data.explanation}`;
-        responseDiv.textContent = "✅ Analysis complete.";
+        responseDiv.textContent = "Analysis complete.";
       })
       .catch((error) => {
-        console.error("❌ Error:", error);
+        console.error("Error:", error);
         responseDiv.textContent = "An error occurred. Check console for details.";
       });
   });

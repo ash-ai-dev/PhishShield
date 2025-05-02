@@ -1,21 +1,23 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>PhishShield</title>
-    <link rel="stylesheet" type="text/css" href="styles.css" />
+    <title>PhishShield!</title>
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <h1>PhishShield!</h1>
+    <div id="container">
+      <h1>PhishShield!</h1>
+      <button id="fetchData">Analyze Latest Gmail</button>
+      <div id="response" class="status-text"></div>
 
-    <button id="fetchData">Analyze Latest Gmail</button>
+      <div id="result">
+        <h2 id="prediction-label">Prediction:</h2>
+        <p id="prediction" class="prediction-text">...</p>
 
-    <div id="response">Waiting for action...</div>
-
-    <div id="response"></div>
-
-    <h2>Prediction: <span id="prediction"></span></h2>
-    <p><strong>Explanation:</strong></p>
-    <p id="explanation"></p>
+        <h3>Explanation:</h3>
+        <p id="explanation" class="explanation-text"></p>
+      </div>
+    </div>
 
     <script src="popup.js"></script>
   </body>

@@ -1,22 +1,68 @@
 body {
-  font-family: Arial, sans-serif;
-  padding: 10px;
-  width: 300px;
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f4f4f4; 
+  width: 340px;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+#container {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 h1 {
+  font-size: 20px;
+  margin-bottom: 12px;
+  color: #222;
+}
+
+button {
+  padding: 10px;
+  font-size: 14px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 15px;
+  transition: background-color 0.2s ease;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+.status-text {
+  font-size: 13px;
+  margin-bottom: 15px;
+  color: #444;
+}
+
+#result h2,
+#result h3 {
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.prediction-text {
+  font-weight: bold;
   font-size: 16px;
+  color: #d32f2f; /*Red for Phish*/
   margin-bottom: 10px;
 }
 
-#fetchData {
-  padding: 8px 16px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-#response {
-  margin-top: 20px;
-  font-size: 14px;
+.explanation-text {
+  white-space: pre-line;
+  line-height: 1.5;
+  font-size: 13px;
   color: #333;
+  background-color: #fff;
+  padding: 10px;
+  border-radius: 5px;
+  max-height: none; /*Let it expand*/
+  overflow: auto; /*Scroll ONLY if needed*/
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
 }

@@ -3,3 +3,4 @@ backend/__pycache__
 kaggle.env
 backend/openAI.env
 backend/data/
+backend/mbox_files

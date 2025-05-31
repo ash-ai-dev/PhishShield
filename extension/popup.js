@@ -7,7 +7,7 @@ document.getElementById("fetchData").addEventListener("click", () => {
 
   chrome.identity.getAuthToken({ interactive: true }, (token) => {
     if (chrome.runtime.lastError) {
-      console.error("Auth error:", chrome.runtime.lastError);
+      console.error("Auth error:", chrome.runtime.lastError.message);
       responseDiv.textContent = "Authentication failed.";
       return;
     }
@@ -16,11 +16,14 @@ document.getElementById("fetchData").addEventListener("click", () => {
     responseDiv.textContent = "Fetching latest Gmail message...";
 
     // Step 1: Fetch most recent message ID
-    fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=1", {
-      headers: {
-        Authorization: "Bearer " + token,
-      },
-    })
+    fetch(
+      "https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=1",
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      }
+    )
       .then((res) => res.json())
       .then((data) => {
         const messageId = data?.messages?.[0]?.id;
@@ -30,11 +33,14 @@ document.getElementById("fetchData").addEventListener("click", () => {
         }
 
         // Step 2: Fetch full message details
-        return fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}?format=full`, {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        });
+        return fetch(
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}?format=full`,
+          {
+            headers: {
+              Authorization: "Bearer " + token,
+            },
+          }
+        );
       })
       .then((res) => res.json())
       .then((message) => {
@@ -44,10 +50,14 @@ document.getElementById("fetchData").addEventListener("click", () => {
         }
 
         const headers = message.payload.headers || [];
-        const subject = headers.find((h) => h.name === "Subject")?.value || "No subject";
-        const sender = headers.find((h) => h.name === "From")?.value || "Unknown sender";
+        const subject =
+          headers.find((h) => h.name === "Subject")?.value || "No subject";
+        const sender =
+          headers.find((h) => h.name === "From")?.value || "Unknown sender";
         const emailBody = message.snippet || "";
-        const receivedTime = new Date(parseInt(message.internalDate)).toISOString();
+        const receivedTime = new Date(
+          parseInt(message.internalDate)
+        ).toISOString();
 
         responseDiv.textContent = `Analyzing: "${subject}"...`;
         console.log("Full Gmail message:", message);
@@ -76,7 +86,8 @@ document.getElementById("fetchData").addEventListener("click", () => {
       })
       .catch((error) => {
         console.error("Error:", error);
-        responseDiv.textContent = "An error occurred. Check console for details.";
+        responseDiv.textContent =
+          "An error occurred. Check console for details.";
       });
   });
 });

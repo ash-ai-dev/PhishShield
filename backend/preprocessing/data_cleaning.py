@@ -62,12 +62,20 @@ try:
     report_drop(before, df, "Remove rows with invalid 'From' or 'To' emails")
     """
 
-    # --- 8. Reset index after all cleaning steps ---
-    df.reset_index(drop=True, inplace=True)
+    # --- 7.5. Shuffle only label 0 rows ---
+    label_0 = df[df['Label'] == 0].sample(frac=1, random_state=42).reset_index(drop=True)
+    label_1 = df[df['Label'] == 1].reset_index(drop=True)
+    df = pd.concat([label_0, label_1])
+    print("🔀 Shuffled label 0 rows and recombined with label 1.")
+
+    # --- 8. Final shuffle of entire dataset ---
+    df = df.sample(frac=1, random_state=99).reset_index(drop=True)
+    print("🎲 Final dataset shuffle complete.")
 
     # --- 9. Save the cleaned DataFrame ---
     df.to_csv(output_file, index=False)
-    print(f"\n✅ Cleaned data saved to {output_file} with {len(df)} rows (Phishing emails remaining: {df[df['label'] == 1].shape[0]}).")
+    print(f"\n✅ Cleaned data saved to {output_file} with {len(df)} rows (Phishing emails remaining: {df[df['Label'] == 1].shape[0]}).")
+
 
 except FileNotFoundError:
     print(f"❌ Input file not found: {input_file}")

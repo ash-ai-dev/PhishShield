@@ -1,70 +1,130 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sentence_transformers import SentenceTransformer
+import numpy as np
+import os
 
-# Adjustable parameters
+# --- Config ---
 input_csv_path = "../data/preprocessed/all_emails_cleaned.csv"
-desired_phishing_ratio = 0.3  # Example: 30% phishing, 70% legit in training set
+phishing_ratios = [0.1, 0.3, 0.5]  # Percent of phishing for training
 random_state = 42
 test_size = 0.15
 val_size = 0.15
+realistic_test_ratio = 0.02  # Test set will be 2% phishing
+output_dir = "../data/preprocessed/"
 
 print("🔄 Loading dataset...")
 df = pd.read_csv(input_csv_path)
-print(f"✅ Loaded {len(df)} rows.")
-
-# Ensure no missing body or label
-print("🧹 Dropping rows with missing Body or Label...")
 df = df.dropna(subset=["Body", "Label"])
-print(f"✅ Remaining rows: {len(df)}")
+print(f"✅ Loaded and cleaned: {len(df)} rows.")
 
-# 2. Split off test + validation sets first
-print("✂️ Splitting into features and labels...")
+# --- Stratified split of full data ---
 X = df.drop("Label", axis=1)
 y = df["Label"]
 
-print("🔀 Splitting into train/test...")
-X_temp, X_test, y_temp, y_test = train_test_split(
-    X, y, test_size=test_size, stratify=y, random_state=random_state
-)
+# --- Create realistic test set with 2% phishing ---
+print("🔀 Creating realistic test set (2% phishing)...")
+phish_df = df[df["Label"] == 1]
+legit_df = df[df["Label"] == 0]
 
-print("🔀 Splitting train into train/val...")
-X_train, X_val, y_train, y_val = train_test_split(
+test_phish = phish_df.sample(frac=realistic_test_ratio, random_state=random_state)
+test_legit = legit_df.sample(n=len(test_phish) * 49, random_state=random_state)  # 1:49 phishing ratio
+test_df = pd.concat([test_phish, test_legit]).sample(frac=1, random_state=random_state)
+
+df_remaining = df.drop(test_df.index)
+
+# Split remaining into training and validation
+print("🔀 Splitting remaining into train/val sets...")
+X_temp = df_remaining.drop("Label", axis=1)
+y_temp = df_remaining["Label"]
+X_train_full, X_val, y_train_full, y_val = train_test_split(
     X_temp, y_temp, test_size=val_size / (1 - test_size), stratify=y_temp, random_state=random_state
 )
 
-print(f"✅ Training samples: {len(X_train)}, Validation: {len(X_val)}, Test: {len(X_test)}")
+# Save raw test and validation sets (optional)
+print("💾 Saving raw test and validation sets...")
+test_df.to_csv(f"{output_dir}test.csv", index=False)
+val_df = X_val.copy()
+val_df["Label"] = y_val
+val_df.to_csv(f"{output_dir}val.csv", index=False)
 
-# 3. Apply SMOTE to the training set
-print("📝 Extracting text from training set...")
-X_train_text = X_train["Body"]
+# --- Sentence Transformer model for embeddings ---
+print("🧠 Loading sentence transformer model...")
+model = SentenceTransformer('all-MiniLM-L6-v2')  # Lightweight, good balance of speed & quality
 
-print("🔠 Vectorizing text with TF-IDF...")
-vectorizer = TfidfVectorizer(max_features=5000)
-X_train_vec = vectorizer.fit_transform(X_train_text)
-print(f"✅ TF-IDF shape: {X_train_vec.shape}")
+# --- Generate embeddings for validation and test sets ---
+print("🔠 Generating embeddings for validation text...")
+X_val_text = X_val["Body"].tolist()
+X_val_embeds = model.encode(X_val_text, batch_size=64, show_progress_bar=True)
 
-# Apply SMOTE
-print(f"🧪 Applying SMOTE with desired phishing ratio: {desired_phishing_ratio}...")
-sm = SMOTE(sampling_strategy=desired_phishing_ratio, random_state=random_state)
-X_train_resampled, y_train_resampled = sm.fit_resample(X_train_vec, y_train)
-print(f"✅ After SMOTE: {X_train_resampled.shape[0]} samples")
+print("🔠 Generating embeddings for test text...")
+X_test_text = test_df["Body"].tolist()
+X_test_embeds = model.encode(X_test_text, batch_size=64, show_progress_bar=True)
 
-# Reconstruct resampled DataFrame
-print("📦 Reconstructing DataFrame from resampled data...")
-X_train_resampled_df = pd.DataFrame(X_train_resampled.toarray(), columns=vectorizer.get_feature_names_out())
-y_train_resampled_df = pd.DataFrame(y_train_resampled, columns=["Label"])
+# Save embeddings + labels for val and test
+print("💾 Saving validation embeddings + labels...")
+val_embedded_df = pd.DataFrame(X_val_embeds)
+val_embedded_df["Label"] = y_val.values
+val_embedded_df.to_csv(f"{output_dir}val_embed.csv", index=False)
+print(f"✅ Saved validation embeddings: val_embed.csv ({len(val_embedded_df)} samples)")
 
-# Combine and save
-print("💾 Saving validation and test sets...")
-X_val["Label"] = y_val
-X_test["Label"] = y_test
-X_val.to_csv("../data/preprocessed/val.csv", index=False)
-X_test.to_csv("../data/preprocessed/test.csv", index=False)
+print("💾 Saving test embeddings + labels...")
+test_embedded_df = pd.DataFrame(X_test_embeds)
+test_embedded_df["Label"] = test_df["Label"].values
+test_embedded_df.to_csv(f"{output_dir}test_embed.csv", index=False)
+print(f"✅ Saved test embeddings: test_embed.csv ({len(test_embedded_df)} samples)")
 
-print("💾 Saving resampled training set...")
-X_train_resampled_df["Label"] = y_train_resampled_df
-X_train_resampled_df.to_csv("../data/preprocessed/train_resampled.csv", index=False)
+# --- Generate embeddings for training data ---
+print("🔠 Generating embeddings for training text...")
+X_train_text = X_train_full["Body"].tolist()
+X_train_embeds = model.encode(X_train_text, batch_size=64, show_progress_bar=True)
 
-print("✅ All datasets saved successfully!")
+# --- Loop through different ratios and SMOTE modes ---
+for ratio in phishing_ratios:
+    for use_smote in [False, True]:
+        suffix = f"embed_smote_{int(ratio*100)}" if use_smote else f"embed_{int(ratio*100)}"
+
+        output_file = f"{output_dir}train_{suffix}.csv"
+
+        # ✅ Skip if file already exists
+        if os.path.exists(output_file):
+            print(f"⏭️ Skipping {output_file} (already exists)")
+            continue  # Skip to the next loop
+
+        print(f"\n⚙️ Generating dataset: train_{suffix}.csv")
+        
+        X_train_vec = X_train_embeds
+        y_train = y_train_full.copy().values
+
+        if use_smote:
+            print(f"🧪 Applying SMOTE with phishing ratio {ratio}...")
+            sm = SMOTE(sampling_strategy=ratio, random_state=random_state)
+            X_resampled, y_resampled = sm.fit_resample(X_train_vec, y_train)
+        else:
+            print(f"✂️ Downsampling legitimate emails to phishing ratio {ratio}...")
+
+            phish_mask = y_train == 1
+            legit_mask = y_train == 0
+
+            phish_indices = np.where(phish_mask)[0]
+            legit_indices_pool = np.where(legit_mask)[0]
+
+            desired_legit_count = int(len(phish_indices) / ratio - len(phish_indices))
+            print(f"📐 Need {desired_legit_count} legit emails out of {len(legit_indices_pool)} available (sampling with replacement)")
+
+            sampled_legit_indices = np.random.choice(legit_indices_pool, desired_legit_count, replace=True)
+
+            selected_indices = np.concatenate([phish_indices, sampled_legit_indices])
+
+            X_resampled = X_train_vec[selected_indices]
+            y_resampled = y_train[selected_indices]
+
+        # Save as CSV (embeddings + label)
+        print("📦 Saving embeddings + labels...")
+        df_resampled = pd.DataFrame(X_resampled)
+        df_resampled["Label"] = y_resampled
+        df_resampled.to_csv(f"{output_dir}train_{suffix}.csv", index=False)
+
+        print(f"✅ Saved: train_{suffix}.csv ({len(df_resampled)} samples)")
+        print("📊 Label counts:\n", pd.Series(y_resampled).value_counts())

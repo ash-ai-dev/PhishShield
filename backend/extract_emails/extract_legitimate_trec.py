@@ -4,7 +4,7 @@ import os
 import sys
 from html import unescape
 
-csv.field_size_limit(sys.maxsize)
+csv.field_size_limit(2**31 - 1)
 
 input_csv = '../data/raw_kaggle/email_origin.csv'
 output_dir = '../data/extracted'

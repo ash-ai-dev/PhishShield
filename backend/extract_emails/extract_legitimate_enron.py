@@ -3,7 +3,7 @@ import re
 import os
 import sys
 
-csv.field_size_limit(sys.maxsize) 
+csv.field_size_limit(2**31 - 1)
 
 output_dir = '../data/extracted'
 output_csv = os.path.join(output_dir, 'parsed_enron_emails.csv')
@@ -29,7 +29,7 @@ with open('../data/raw_kaggle/emails.csv', newline='', encoding='utf-8') as csvf
     extracted_data = []
 
     for i, row in enumerate(reader):
-        if i >= 65000:
+        if i >= 110000:
             break
         message = row['message']
         fields = extract_fields(message)

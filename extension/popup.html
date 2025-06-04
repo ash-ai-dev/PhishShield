@@ -7,18 +7,27 @@
   <body>
     <div id="container">
       <h1>PhishShield!</h1>
-      <button id="fetchData">Analyze Latest Gmail</button>
-      <div id="response" class="status-text"></div>
-
-      <div id="result">
-        <h2 id="prediction-label">Prediction:</h2>
-        <p id="prediction" class="prediction-text">...</p>
-
-        <h3>Explanation:</h3>
-        <p id="explanation" class="explanation-text"></p>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <button id="loadEmails">Load Emails</button>
+        <button
+          id="clearCache"
+          title="Clear cached emails"
+          style="padding: 4px 8px; font-size: 14px; cursor: pointer"
+        >
+          Clear
+        </button>
       </div>
+      <div
+        id="emailList"
+        style="
+          max-height: 400px;
+          overflow-y: auto;
+          border: 1px solid #ccc;
+          padding: 10px;
+        "
+      ></div>
     </div>
 
-    <script src="popup.js"></script>
+    <script type="module" src="popup.js"></script>
   </body>
 </html>

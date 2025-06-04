@@ -1,7 +1,7 @@
 body {
   margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f4f4f4; 
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f4f4f4;
   width: 340px;
   padding: 20px;
   box-sizing: border-box;
@@ -65,4 +65,67 @@ button:hover {
   max-height: none; /*Let it expand*/
   overflow: auto; /*Scroll ONLY if needed*/
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+}
+
+#container {
+  padding: 10px;
+  font-family: sans-serif;
+}
+
+#emailList div {
+  padding: 6px;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+}
+
+.details-container {
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 20px;
+  font-family: sans-serif;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+pre {
+  background: #eee;
+  padding: 10px;
+  white-space: pre-wrap;
+  border-radius: 6px;
+}
+
+/* The modal (background overlay) */
+.modal {
+  position: fixed;
+  z-index: 1000; /* On top */
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Modal content box */
+.modal-content {
+  background-color: #fff;
+  padding: 20px 30px;
+  border-radius: 8px;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-family: Arial, sans-serif;
+}
+
+/* Close button */
+.close {
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
 }

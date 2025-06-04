@@ -1,93 +1,118 @@
-document.getElementById("fetchData").addEventListener("click", () => {
-  const responseDiv = document.getElementById("response");
-  const predictionDiv = document.getElementById("prediction");
-  const explanationDiv = document.getElementById("explanation");
+import {
+  fetchEmailsByLabel,
+  fetchEmailById,
+  extractSimplifiedMessages,
+} from "./gmailAPI.js";
 
-  responseDiv.textContent = "Authenticating with Google...";
+const CACHE_KEY = "emailCache";
 
-  chrome.identity.getAuthToken({ interactive: true }, (token) => {
-    if (chrome.runtime.lastError) {
-      console.error("Auth error:", chrome.runtime.lastError.message);
-      responseDiv.textContent = "Authentication failed.";
+async function loadEmails() {
+  const emailListDiv = document.getElementById("emailList");
+  emailListDiv.innerHTML = "Loading emails...";
+
+  try {
+    const { phishingLabelId: labelId } = await new Promise((resolve) =>
+      chrome.storage.local.get(["phishingLabelId"], resolve)
+    );
+
+    if (!labelId) {
+      emailListDiv.innerText =
+        "PhishShield label not found. Please initialize the extension.";
       return;
     }
 
-    console.log("OAuth token:", token);
-    responseDiv.textContent = "Fetching latest Gmail message...";
+    // Try to load cached data
+    const cache = await new Promise((resolve) =>
+      chrome.storage.local.get([CACHE_KEY], (result) =>
+        resolve(result[CACHE_KEY])
+      )
+    );
 
-    // Step 1: Fetch most recent message ID
-    fetch(
-      "https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=1",
-      {
-        headers: {
-          Authorization: "Bearer " + token,
-        },
-      }
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        const messageId = data?.messages?.[0]?.id;
-        if (!messageId) {
-          responseDiv.textContent = "No recent emails found.";
-          return Promise.reject("No message ID retrieved.");
-        }
+    if (cache && Object.keys(cache).length > 0) {
+      renderEmailList(cache);
+      console.log("Loaded emails from cache.");
+      return;
+    }
 
-        // Step 2: Fetch full message details
-        return fetch(
-          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}?format=full`,
-          {
-            headers: {
-              Authorization: "Bearer " + token,
-            },
-          }
-        );
-      })
-      .then((res) => res.json())
-      .then((message) => {
-        if (!message || !message.payload) {
-          responseDiv.textContent = "Unable to retrieve email content.";
-          return;
-        }
+    // No cache, fetch fresh emails and predictions
+    const messages = await fetchEmailsByLabel(labelId);
+    const simplifiedMessages = await extractSimplifiedMessages(labelId);
 
-        const headers = message.payload.headers || [];
-        const subject =
-          headers.find((h) => h.name === "Subject")?.value || "No subject";
-        const sender =
-          headers.find((h) => h.name === "From")?.value || "Unknown sender";
-        const emailBody = message.snippet || "";
-        const receivedTime = new Date(
-          parseInt(message.internalDate)
-        ).toISOString();
+    const res = await fetch("http://127.0.0.1:8000/api/emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(simplifiedMessages),
+    });
 
-        responseDiv.textContent = `Analyzing: "${subject}"...`;
-        console.log("Full Gmail message:", message);
+    const { results } = await res.json();
 
-        // Step 3: Send email data to FastAPI
-        return fetch("http://127.0.0.1:8000/email", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email_body: emailBody,
-            sender: sender,
-            subject: subject,
-            received_time: receivedTime,
-          }),
-        });
-      })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("FastAPI response:", data);
+    const cacheMap = {};
+    results.forEach((r) => {
+      const msgId = r.email.messageId;
+      cacheMap[msgId] = {
+        label: r.prediction,
+        from: r.email.from,
+        subject: r.email.subject,
+        body: r.email.body,
+      };
+    });
 
-        predictionDiv.textContent = `Prediction: ${data.prediction}`;
-        explanationDiv.textContent = `Explanation: ${data.explanation}`;
-        responseDiv.textContent = "Analysis complete.";
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-        responseDiv.textContent =
-          "An error occurred. Check console for details.";
+    // Save cache
+    await new Promise((resolve) =>
+      chrome.storage.local.set({ [CACHE_KEY]: cacheMap }, resolve)
+    );
+
+    renderEmailList(cacheMap);
+  } catch (err) {
+    console.error("❗ Error:", err);
+    emailListDiv.innerText = "An error occurred: " + err.message;
+  }
+}
+
+function renderEmailList(cacheMap) {
+  const emailListDiv = document.getElementById("emailList");
+  emailListDiv.innerHTML = "";
+
+  Object.entries(cacheMap).forEach(([msgId, data]) => {
+    const emailDiv = document.createElement("div");
+    emailDiv.style.borderBottom = "1px solid #ddd";
+    emailDiv.style.marginBottom = "10px";
+    emailDiv.style.cursor = "pointer";
+    emailDiv.style.padding = "8px";
+    emailDiv.style.backgroundColor =
+      data.label === "Phishing" ? "#ffd9d9" : "#d8f8d3";
+
+    emailDiv.innerHTML = `<strong>${data.subject}</strong><p>${data.body.slice(
+      0,
+      100
+    )}...</p>`;
+
+    emailDiv.addEventListener("click", () => {
+      chrome.storage.local.set({ selectedEmail: data }, () => {
+        chrome.tabs.create({ url: chrome.runtime.getURL("details.html") });
       });
+    });
+
+    emailListDiv.appendChild(emailDiv);
   });
+}
+
+// Clear cache handler
+document.getElementById("clearCache").addEventListener("click", async () => {
+  await new Promise((resolve) =>
+    chrome.storage.local.remove(CACHE_KEY, resolve)
+  );
+  // Optionally clear UI immediately
+  document.getElementById("emailList").innerHTML =
+    "Cache cleared. Loading fresh emails...";
+  // Reload fresh emails
+  loadEmails();
 });
+
+// Load emails automatically on popup open
+loadEmails();
+
+// Manual load button
+document
+  .getElementById("loadEmails")
+  .addEventListener("click", () => loadEmails());

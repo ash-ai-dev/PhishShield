@@ -99,68 +99,6 @@ async def receive_emails(emails: List[EmailItem]):
         print("❌ Error in receive_emails:", e)
         raise HTTPException(status_code=500, detail="Failed to process emails")
 
-
-"""
-@app.post("/email")
-async def receive_emails(request: Request):
-    try:
-        raw_body = await request.json()
-        print("📨 Raw request body received:", raw_body)
-
-        # Optionally log the type of each entry for clarity
-        if isinstance(raw_body, list):
-            for i, item in enumerate(raw_body):
-                print(f"Item {i} keys: {list(item.keys())}")
-        else:
-            print("❌ Expected a list but got:", type(raw_body))
-
-        # Manually parse to Pydantic model list
-        emails = [EmailData(**item) for item in raw_body]
-
-    except Exception as e:
-        print("❌ Failed to parse request body:", e)
-        raise HTTPException(status_code=400, detail="Invalid request format.")
-    
-    results = []
-    print("hi")
-    # Combine subject + body for embedding
-    full_texts = [f"{email.subject}\n\n{email.email_body}" for email in emails]
-    print("\n📨 Full text used for embedding:\n")
-    for i, text in enumerate(full_texts):
-        print(f"Email {i}:\n{text}\n{'-'*40}")
-
-    print("bye")
-    print("Model expects features:", model.feature_names_in_)
-    predictions = predict_emails(full_texts)
-    print("byebye")
-    print(predictions)
-
-    for email, prediction in zip(emails, predictions):
-        label = "Phishing" if prediction == 1 else "Not Phishing"
-
-        # Optional explanation
-        if label == "Phishing":
-            try:
-                explanation = await explain_phishing({
-                    "sender": email.sender,
-                    "subject": email.subject,
-                    "body": email.email_body
-                })
-                explanation = explanation.get("explanation", "")
-            except Exception:
-                explanation = "Failed to generate explanation."
-        else:
-            explanation = "This email does not appear to be phishing."
-
-        results.append({
-            "prediction": label,
-            "explanation": explanation,
-            "email": email.dict()
-        })
-
-    return JSONResponse(content={"results": results})
-"""
-
 # --- Explanation endpoint (OpenAI) ---
 @app.post("/api/explain")
 async def explain_phishing(payload: dict):

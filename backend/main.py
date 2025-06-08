@@ -16,7 +16,7 @@ load_dotenv("openAI.env")
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Load ML model
-model = joblib.load("data/saved_models/train_embed_50_Ensemble.joblib") 
+model = joblib.load("data/saved_models/train_embed_30_Ensemble.joblib") 
 
 # Load sentence embedding model
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -35,13 +35,13 @@ app.add_middleware(
 # Helper to predict email phishing status
 def predict_emails(email_texts: list[str]):
     embedding_array = embedding_model.encode(email_texts, batch_size=32, show_progress_bar=False)
-    print(f"✅ Embeddings shape: {embedding_array.shape}")
+    print(f"Embeddings shape: {embedding_array.shape}")
 
     # Use model's expected feature names as columns
     columns = list(map(str, model.feature_names_in_)) if hasattr(model, 'feature_names_in_') else [str(i) for i in range(embedding_array.shape[1])]
     embedding_df = pd.DataFrame(embedding_array, columns=columns)
 
-    print(f"✅ Embedding DataFrame shape: {embedding_df.shape}")
+    print(f"Embedding DataFrame shape: {embedding_df.shape}")
     print("Model expects:", model.feature_names_in_)
     print("DataFrame columns:", embedding_df.columns.tolist())
     print("Column equality:", all(str(c1) == str(c2) for c1, c2 in zip(model.feature_names_in_, embedding_df.columns)))
@@ -67,7 +67,7 @@ async def receive_emails(emails: List[EmailItem]):
         full_texts = [f"{email.subject} {email.body}".lower() for email in emails]
 
         # 🔍 Debug: show inputs to embedding model
-        print("\n📨 Full normalized text used for embedding:\n")
+        print("\nFull normalized text used for embedding:\n")
         for i, text in enumerate(full_texts):
             print(f"Email {i+1}: {text}\n{'-'*40}")
 
@@ -96,7 +96,7 @@ async def receive_emails(emails: List[EmailItem]):
         return JSONResponse(content={"results": results})
 
     except Exception as e:
-        print("❌ Error in receive_emails:", e)
+        print("Error in receive_emails:", e)
         raise HTTPException(status_code=500, detail="Failed to process emails")
 
 # --- Explanation endpoint (OpenAI) ---
@@ -107,21 +107,30 @@ async def explain_phishing(payload: dict):
     body = payload.get("body", "")
 
     prompt = f"""
-    You are a cybersecurity expert. A user received the following suspicious email:
+    You are a cybersecurity analyst. Analyze the email below for signs of phishing and explain in plain, non-technical English. Also write in plaintext, as I am displaying this on a web browser (it should look nice for the user, without * or # characters).
 
+    --- Email Start ---
     From: {sender}
     Subject: {subject}
-    Body: {body}
+    Body:
+    {body}
+    --- Email End ---
 
-    Explain in plain English why this email might be a phishing attempt.
+    Your response should include:
+    1. A short summary of why the email might be suspicious.
+    2. Specific red flags (e.g., spoofed sender, urgent tone, suspicious links).
+    3. A recommendation for what the user should do (e.g., report, delete, ignore).
+
+    Keep the tone informative and concise, and simple enough for people that are not technical to understand. If possible, add a "Too Long Didn't Read" or TLDR section at the top for those that can not spend time reading the full paragraph explanation.
     """
+
 
     try:
         response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
-            max_tokens=100
+            max_tokens=300
         )
         explanation = response.choices[0].message.content.strip()
         return {"explanation": explanation}

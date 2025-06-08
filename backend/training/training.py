@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, ConfusionMatrixDisplay
 from xgboost import XGBClassifier
-from lightgbm import LGBMClassifier, early_stopping  # ✅
+from lightgbm import LGBMClassifier, early_stopping  
 from tqdm import tqdm
 import warnings
 warnings.filterwarnings("ignore")
@@ -65,13 +65,13 @@ for train_file in train_files:
         if os.path.exists(model_path):
             model = joblib.load(model_path)
         else:
-            if name == 'XGBoost':  # ✅
+            if name == 'XGBoost':  
                 model.fit(
                     X_train, y_train,
                     eval_set=[(X_val, y_val)],
                     verbose=False
                 )
-            elif name == 'LightGBM':  # ✅
+            elif name == 'LightGBM':  
                 model.fit(
                     X_train, y_train,
                     eval_set=[(X_val, y_val)],

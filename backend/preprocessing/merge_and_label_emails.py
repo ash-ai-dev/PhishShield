@@ -21,12 +21,12 @@ for filename in os.listdir(input_dir):
             all_data.append(df)
             print(f"Loaded {filename} with label {label}")
         except Exception as e:
-            print(f"⚠️ Could not process {filename}: {e}")
+            print(f"Could not process {filename}: {e}")
 
 # Combine all data into a single DataFrame
 if all_data:
     combined_df = pd.concat(all_data, ignore_index=True)
     combined_df.to_csv(output_file, index=False)
-    print(f"\n✅ Done. Saved {len(combined_df)} labeled emails to: {output_file}")
+    print(f"\nDone. Saved {len(combined_df)} labeled emails to: {output_file}")
 else:
-    print("❌ No data was loaded. Please check the input directory and filenames.")
+    print("No data was loaded. Please check the input directory and filenames.")
